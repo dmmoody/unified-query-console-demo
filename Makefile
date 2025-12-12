@@ -1,4 +1,4 @@
-.PHONY: help build up down logs clean test verify
+.PHONY: help build up down logs clean test verify seed seed-bash demo-gateway demo-sorting lint tidy fmt
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -75,11 +75,11 @@ tidy: ## Tidy Go modules
 fmt: ## Format Go code
 	go fmt ./...
 
-seed: ## Seed databases with test data (fast Go version)
-	@echo "🌱 Seeding databases with test data..."
+seed: ## Seed databases with 3700 records (1200 ODFI + 1200 RDFI + 800 Ledger + 500 EIP)
+	@echo "🌱 Seeding databases (1200 ODFI, 1200 RDFI, 800 Ledger, 500 EIP)..."
 	@go run cmd/seed/main.go
 
-seed-bash: ## Seed databases with test data (bash version)
+seed-bash: ## Seed databases with 620 records (slower bash version)
 	@./seed.sh
 
 lint: ## Run linters (requires golangci-lint)

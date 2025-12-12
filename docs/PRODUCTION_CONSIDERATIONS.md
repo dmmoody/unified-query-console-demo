@@ -176,14 +176,55 @@ merged := mergeSortedPages(odfiPage, rdfiPage, limit)
 cache.Set(cacheKey, results, 30*time.Second)
 ```
 
-### 2. Concurrent Fetching (Already Done!)
+### 2. Concurrent Fetching ✅ IMPLEMENTED
 ```go
-// Fetch ODFI and RDFI in parallel (already implemented)
-go fetchODFI()
-go fetchRDFI()
+// Fan-out: Launch concurrent requests to all services
+var wg sync.WaitGroup
+resultsChan := make(chan serviceResult, 2)
+
+wg.Add(1)
+go func() {
+    defer wg.Done()
+    items, err := s.fetchODFIEntries(ctx, status, traceNumber)
+    resultsChan <- serviceResult{serviceName: "ODFI", items: items, err: err}
+}()
+
+wg.Add(1) 
+go func() {
+    defer wg.Done()
+    items, err := s.fetchRDFIEntries(ctx, status, traceNumber)
+    resultsChan <- serviceResult{serviceName: "RDFI", items: items, err: err}
+}()
+
+// Fan-in: Wait and collect
+go func() { wg.Wait(); close(resultsChan) }()
+for result := range resultsChan { /* merge */ }
 ```
 
-### 3. Circuit Breaker
+### 3. Graceful Degradation ✅ IMPLEMENTED
+```go
+// If a service is down, return partial results with health info
+type UnifiedAchResponse struct {
+    Items       []*UnifiedAchItem `json:"items"`
+    ServiceInfo []ServiceHealth   `json:"service_info"`  // Health per service
+    Partial     bool              `json:"partial"`       // True if degraded
+    TotalCount  int               `json:"total_count"`
+}
+
+// Response when RDFI is down:
+// HTTP 207 Multi-Status
+{
+    "items": [...ODFI items only...],
+    "service_info": [
+        {"service": "ODFI", "available": true, "latency": "45ms"},
+        {"service": "RDFI", "available": false, "error": "connection refused"}
+    ],
+    "partial": true,
+    "total_count": 150
+}
+```
+
+### 4. Circuit Breaker (Future Enhancement)
 ```go
 // Don't let one slow service block everything
 if odfiResponse.Duration > threshold {
@@ -191,7 +232,7 @@ if odfiResponse.Duration > threshold {
 }
 ```
 
-### 4. Streaming
+### 5. Streaming (Future Enhancement)
 ```go
 // Stream results as they arrive
 writer := json.NewEncoder(w)

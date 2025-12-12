@@ -67,6 +67,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 // ========== Legacy Unified ACH Items Handlers ==========
 
 // GetAchItems handles GET /api/v1/ach-items
+// Returns unified ACH items with service health info for graceful degradation
 func (h *Handler) GetAchItems(w http.ResponseWriter, r *http.Request) {
 	side := r.URL.Query().Get("side")
 	status := r.URL.Query().Get("status")
@@ -122,17 +123,25 @@ func (h *Handler) GetAchItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, err := h.service.GetAchItems(r.Context(), side, status, traceNumber, sortBy, sortOrder, limit, offset)
+	response, err := h.service.GetAchItems(r.Context(), side, status, traceNumber, sortBy, sortOrder, limit, offset)
 	if err != nil {
 		commonhttp.Error(w, http.StatusInternalServerError, "failed to fetch ACH items")
 		return
 	}
 
-	if items == nil {
-		items = []*UnifiedAchItem{}
+	// Ensure items is never nil
+	if response.Items == nil {
+		response.Items = []*UnifiedAchItem{}
 	}
 
-	commonhttp.JSON(w, http.StatusOK, items)
+	// If partial results due to service degradation, use 207 Multi-Status
+	// This tells the client "I got you some data, but not all services responded"
+	if response.Partial {
+		commonhttp.JSON(w, http.StatusMultiStatus, response)
+		return
+	}
+
+	commonhttp.JSON(w, http.StatusOK, response)
 }
 
 // GetAchItem handles GET /api/v1/ach-items/{side}/{id}

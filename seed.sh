@@ -1,12 +1,19 @@
 #!/bin/bash
 
-# ACH Concourse - Database Seeding Script
+# ACH Concourse - Database Seeding Script (Shell Version)
 # This script seeds all databases with realistic test data
+#
+# ⚠️  For high-volume seeding (1000+ records), use the Go seeder instead:
+#     go run ./cmd/seed
+#     It uses concurrent workers and is ~10x faster.
+#
+# This shell script creates 620 records total.
 
 set -e
 
-echo "🌱 ACH Concourse - Database Seeding"
-echo "===================================="
+echo "🌱 ACH Concourse - Database Seeding (Shell - 620 records)"
+echo "========================================================="
+echo "💡 For 2000+ records, use: go run ./cmd/seed"
 echo ""
 
 # Check if services are running

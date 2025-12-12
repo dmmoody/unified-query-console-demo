@@ -2,14 +2,30 @@ package console
 
 // UnifiedAchItem represents a unified view of ACH entries from ODFI/RDFI
 type UnifiedAchItem struct {
-	Side        string `json:"side"`          // "ODFI" or "RDFI"
-	Source      string `json:"source"`        // "odfi", "rdfi"
+	Side        string `json:"side"`             // "ODFI" or "RDFI"
+	Source      string `json:"source"`           // "odfi", "rdfi"
 	EntryID     string `json:"entry_id"`
 	TraceNumber string `json:"trace_number"`
 	AmountCents int64  `json:"amount_cents"`
 	Status      string `json:"status"`
-	CreatedAt   string `json:"created_at"`    // For sorting
-	Extra       any    `json:"extra,omitempty"` // Optional service-specific fields
+	CreatedAt   string `json:"created_at"`       // For sorting
+	Extra       any    `json:"extra,omitempty"`  // Optional service-specific fields
+}
+
+// ServiceHealth represents the health status of an upstream service
+type ServiceHealth struct {
+	Service   string `json:"service"`
+	Available bool   `json:"available"`
+	Error     string `json:"error,omitempty"`
+	Latency   string `json:"latency,omitempty"` // e.g., "45ms"
+}
+
+// UnifiedAchResponse wraps the items with metadata about service health
+type UnifiedAchResponse struct {
+	Items       []*UnifiedAchItem `json:"items"`
+	ServiceInfo []ServiceHealth   `json:"service_info"`
+	Partial     bool              `json:"partial"` // True if some services were unavailable
+	TotalCount  int               `json:"total_count"`
 }
 
 // ODFIEntry represents an ODFI entry from the ODFI service

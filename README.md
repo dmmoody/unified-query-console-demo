@@ -25,6 +25,34 @@ The Console service acts as a complete API Gateway:
 
 See [docs/GATEWAY.md](docs/GATEWAY.md) for complete API Gateway documentation.
 
+### 🚀 **Fan-Out/Fan-In with Graceful Degradation**
+
+The unified query endpoint (`/api/v1/ach-items`) uses a concurrent fan-out/fan-in pattern:
+
+```
+                    ┌─────────┐
+    Request ───────▶│ Console │
+                    └────┬────┘
+                         │
+           ┌─────────────┼─────────────┐   Fan-Out (parallel)
+           ▼             ▼             ▼
+      ┌────────┐    ┌────────┐    ┌────────┐
+      │  ODFI  │    │  RDFI  │    │  ...   │
+      └────┬───┘    └────┬───┘    └────┬───┘
+           │             │             │
+           └─────────────┼─────────────┘   Fan-In (merge)
+                         ▼
+                    ┌─────────┐
+                    │ Response│  (sorted, paginated, with health info)
+                    └─────────┘
+```
+
+**Benefits:**
+- ⚡ **Parallel execution**: Latency = max(service latencies), not sum
+- 🛡️ **Graceful degradation**: If RDFI is down, you still get ODFI data
+- 📊 **Health visibility**: Response includes per-service health status
+- 🔄 **Partial results**: HTTP 207 Multi-Status signals incomplete data
+
 ## Tech Stack
 
 - **Language**: Go 1.22+
@@ -147,22 +175,43 @@ GET http://localhost:8080/api/v1/ach-items
 curl "http://localhost:8080/api/v1/ach-items?side=ODFI&status=PENDING"
 ```
 
-**Response:**
+**Response (HTTP 200 - All services healthy):**
 ```json
-[
-  {
-    "side": "ODFI",
-    "source": "odfi",
-    "entry_id": "uuid",
-    "trace_number": "123456789",
-    "amount_cents": 10000,
-    "status": "PENDING",
-    "extra": {
-      "company_name": "ACME Corp",
-      "sec_code": "PPD"
+{
+  "items": [
+    {
+      "side": "ODFI",
+      "source": "odfi",
+      "entry_id": "uuid",
+      "trace_number": "123456789",
+      "amount_cents": 10000,
+      "status": "PENDING",
+      "extra": {
+        "company_name": "ACME Corp",
+        "sec_code": "PPD"
+      }
     }
-  }
-]
+  ],
+  "service_info": [
+    {"service": "ODFI", "available": true, "latency": "45ms"},
+    {"service": "RDFI", "available": true, "latency": "52ms"}
+  ],
+  "partial": false,
+  "total_count": 1
+}
+```
+
+**Response (HTTP 207 - Graceful Degradation, some services unavailable):**
+```json
+{
+  "items": [...],
+  "service_info": [
+    {"service": "ODFI", "available": true, "latency": "45ms"},
+    {"service": "RDFI", "available": false, "error": "connection refused", "latency": "2ms"}
+  ],
+  "partial": true,
+  "total_count": 150
+}
 ```
 
 #### Get Single ACH Item

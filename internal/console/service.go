@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -534,51 +536,125 @@ func (s *Service) UpdateEIPCaseStatus(ctx context.Context, id, status string) (*
 	return &eipCase, nil
 }
 
-// ========== Unified ACH Items (Legacy) ==========
+// ========== Unified ACH Items (Fan-Out/Fan-In with Graceful Degradation) ==========
 
-// GetAchItems fetches and unifies entries from ODFI and RDFI services
-func (s *Service) GetAchItems(ctx context.Context, side, status, traceNumber, sortBy, sortOrder string, limit, offset int) ([]*UnifiedAchItem, error) {
-	var results []*UnifiedAchItem
+// serviceResult holds the result from a single service call
+type serviceResult struct {
+	serviceName string
+	items       []*UnifiedAchItem
+	err         error
+	latency     time.Duration
+}
 
-	// Fetch from ODFI if side is empty or "ODFI"
-	if side == "" || side == "ODFI" {
-		odfiItems, err := s.fetchODFIEntries(ctx, status, traceNumber)
-		if err != nil {
-			// Log error but continue with RDFI
-			fmt.Printf("Error fetching ODFI entries: %v\n", err)
-		} else {
-			results = append(results, odfiItems...)
-		}
+// GetAchItems fetches and unifies entries from ODFI and RDFI services using fan-out/fan-in.
+// If a service is unavailable, returns partial results from healthy services with degradation info.
+func (s *Service) GetAchItems(ctx context.Context, side, status, traceNumber, sortBy, sortOrder string, limit, offset int) (*UnifiedAchResponse, error) {
+	// Determine which services to query
+	queryODFI := side == "" || strings.ToUpper(side) == "ODFI"
+	queryRDFI := side == "" || strings.ToUpper(side) == "RDFI"
+
+	// Channel to collect results - buffer for max expected services
+	resultsChan := make(chan serviceResult, 2)
+
+	// WaitGroup to track goroutines
+	var wg sync.WaitGroup
+
+	// Fan-out: Launch concurrent requests
+	if queryODFI {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			start := time.Now()
+			items, err := s.fetchODFIEntries(ctx, status, traceNumber)
+			resultsChan <- serviceResult{
+				serviceName: "ODFI",
+				items:       items,
+				err:         err,
+				latency:     time.Since(start),
+			}
+		}()
 	}
 
-	// Fetch from RDFI if side is empty or "RDFI"
-	if side == "" || side == "RDFI" {
-		rdfiItems, err := s.fetchRDFIEntries(ctx, status, traceNumber)
-		if err != nil {
-			// Log error but continue
-			fmt.Printf("Error fetching RDFI entries: %v\n", err)
-		} else {
-			results = append(results, rdfiItems...)
-		}
+	if queryRDFI {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			start := time.Now()
+			items, err := s.fetchRDFIEntries(ctx, status, traceNumber)
+			resultsChan <- serviceResult{
+				serviceName: "RDFI",
+				items:       items,
+				err:         err,
+				latency:     time.Since(start),
+			}
+		}()
 	}
 
-	// Sort by requested field and order
-	sortUnifiedAchItems(results, sortBy, sortOrder)
+	// Close channel when all goroutines complete
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	// Fan-in: Collect results as they arrive
+	var allItems []*UnifiedAchItem
+	var serviceInfo []ServiceHealth
+	partial := false
+
+	for result := range resultsChan {
+		health := ServiceHealth{
+			Service: result.serviceName,
+			Latency: result.latency.Round(time.Millisecond).String(),
+		}
+
+		if result.err != nil {
+			// Service failed - record degradation but continue
+			health.Available = false
+			health.Error = result.err.Error()
+			partial = true
+			fmt.Printf("[DEGRADED] %s service unavailable: %v (latency: %s)\n",
+				result.serviceName, result.err, health.Latency)
+		} else {
+			// Service healthy - collect items
+			health.Available = true
+			allItems = append(allItems, result.items...)
+			fmt.Printf("[OK] %s service returned %d items (latency: %s)\n",
+				result.serviceName, len(result.items), health.Latency)
+		}
+
+		serviceInfo = append(serviceInfo, health)
+	}
+
+	// Sort combined results
+	sortUnifiedAchItemsOptimized(allItems, sortBy, sortOrder)
 
 	// Apply pagination
-	// Note: For production with large datasets, pagination should be pushed down
-	// to the individual services to avoid loading all data into memory
+	totalCount := len(allItems)
 	start := offset
-	if start > len(results) {
-		start = len(results)
+	if start > totalCount {
+		start = totalCount
 	}
 
 	end := start + limit
-	if limit == 0 || end > len(results) {
-		end = len(results)
+	if limit == 0 || end > totalCount {
+		end = totalCount
 	}
 
-	return results[start:end], nil
+	return &UnifiedAchResponse{
+		Items:       allItems[start:end],
+		ServiceInfo: serviceInfo,
+		Partial:     partial,
+		TotalCount:  totalCount,
+	}, nil
+}
+
+// GetAchItemsLegacy is the old synchronous version (deprecated)
+func (s *Service) GetAchItemsLegacy(ctx context.Context, side, status, traceNumber, sortBy, sortOrder string, limit, offset int) ([]*UnifiedAchItem, error) {
+	resp, err := s.GetAchItems(ctx, side, status, traceNumber, sortBy, sortOrder, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
 }
 
 // GetAchItem fetches a single entry from the specified service
@@ -707,8 +783,8 @@ func (s *Service) fetchRDFIEntry(ctx context.Context, id string) (*UnifiedAchIte
 	}, nil
 }
 
-// sortUnifiedAchItems sorts unified ACH items by the specified field and order
-func sortUnifiedAchItems(items []*UnifiedAchItem, sortBy, sortOrder string) {
+// sortUnifiedAchItemsOptimized sorts unified ACH items using sort.Slice (O(n log n))
+func sortUnifiedAchItemsOptimized(items []*UnifiedAchItem, sortBy, sortOrder string) {
 	// Default to created_at descending if not specified
 	if sortBy == "" {
 		sortBy = "created_at"
@@ -719,56 +795,35 @@ func sortUnifiedAchItems(items []*UnifiedAchItem, sortBy, sortOrder string) {
 
 	ascending := sortOrder == "asc"
 
-	// Simple bubble sort - for production, use sort.Slice
-	for i := 0; i < len(items); i++ {
-		for j := i + 1; j < len(items); j++ {
-			shouldSwap := false
+	sort.Slice(items, func(i, j int) bool {
+		var less bool
 
-			switch sortBy {
-			case "created_at":
-				if ascending {
-					shouldSwap = items[i].CreatedAt > items[j].CreatedAt
-				} else {
-					shouldSwap = items[i].CreatedAt < items[j].CreatedAt
-				}
-			case "status":
-				if ascending {
-					shouldSwap = items[i].Status > items[j].Status
-				} else {
-					shouldSwap = items[i].Status < items[j].Status
-				}
-			case "amount", "amount_cents":
-				if ascending {
-					shouldSwap = items[i].AmountCents > items[j].AmountCents
-				} else {
-					shouldSwap = items[i].AmountCents < items[j].AmountCents
-				}
-			case "trace_number":
-				if ascending {
-					shouldSwap = items[i].TraceNumber > items[j].TraceNumber
-				} else {
-					shouldSwap = items[i].TraceNumber < items[j].TraceNumber
-				}
-			case "side":
-				if ascending {
-					shouldSwap = items[i].Side > items[j].Side
-				} else {
-					shouldSwap = items[i].Side < items[j].Side
-				}
-			default:
-				// Default to created_at
-				if ascending {
-					shouldSwap = items[i].CreatedAt > items[j].CreatedAt
-				} else {
-					shouldSwap = items[i].CreatedAt < items[j].CreatedAt
-				}
-			}
-
-			if shouldSwap {
-				items[i], items[j] = items[j], items[i]
-			}
+		switch sortBy {
+		case "created_at":
+			less = items[i].CreatedAt < items[j].CreatedAt
+		case "status":
+			less = items[i].Status < items[j].Status
+		case "amount", "amount_cents":
+			less = items[i].AmountCents < items[j].AmountCents
+		case "trace_number":
+			less = items[i].TraceNumber < items[j].TraceNumber
+		case "side":
+			less = items[i].Side < items[j].Side
+		default:
+			less = items[i].CreatedAt < items[j].CreatedAt
 		}
-	}
+
+		// Flip for descending order
+		if ascending {
+			return less
+		}
+		return !less
+	})
+}
+
+// sortUnifiedAchItems is deprecated - use sortUnifiedAchItemsOptimized
+func sortUnifiedAchItems(items []*UnifiedAchItem, sortBy, sortOrder string) {
+	sortUnifiedAchItemsOptimized(items, sortBy, sortOrder)
 }
 
 func getEnv(key, defaultValue string) string {
