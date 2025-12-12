@@ -1,0 +1,906 @@
+{
+  "info": {
+    "name": "ACH Concourse API",
+    "description": "Complete API collection for ACH Concourse microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Console (Unified Gateway)",
+      "item": [
+        {
+          "name": "Get All ACH Items (Default Sort)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"]
+            },
+            "description": "Get all ACH items sorted by created_at descending (most recent first) - default behavior"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Sort by Amount (Highest First)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=amount&sort_order=desc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "Show highest value transactions first - useful for high-value monitoring"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Sort by Amount (Lowest First)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=amount&sort_order=asc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Show lowest value transactions first - useful for micro-payments"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Sort by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=status&sort_order=asc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "status"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Group by status alphabetically - useful for workflow views"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Sort by Side (ODFI First)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=side&sort_order=asc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "side"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Separate ODFI from RDFI - ODFI entries first, then RDFI"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Sort by Trace Number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=trace_number&sort_order=asc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "trace_number"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Sequential order by trace number"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Oldest First (FIFO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=created_at&sort_order=asc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "created_at"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": "Oldest entries first - useful for FIFO processing queues"
+          }
+        },
+        {
+          "name": "Get ACH Items - PENDING by Amount",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?status=PENDING&sort_by=amount&sort_order=desc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "Combine filters with sorting - PENDING entries by highest amount"
+          }
+        },
+        {
+          "name": "Get ACH Items - RETURNED by Amount",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?status=RETURNED&sort_by=amount&sort_order=desc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "RETURNED"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "Show largest returned transactions - useful for returns analysis"
+          }
+        },
+        {
+          "name": "Get ACH Items - ODFI by Amount",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?side=ODFI&sort_by=amount&sort_order=desc",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "side",
+                  "value": "ODFI"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "ODFI entries only, sorted by highest amount"
+          }
+        },
+        {
+          "name": "Get ACH Items - First Page (20 items)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?limit=20&offset=0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Paginated results - First page with 20 items"
+          }
+        },
+        {
+          "name": "Get ACH Items - Second Page (20 items)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?limit=20&offset=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated results - Second page with 20 items"
+          }
+        },
+        {
+          "name": "Get ACH Items - Top 10 by Amount",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?sort_by=amount&sort_order=desc&limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "amount"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "desc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Top 10 highest value transactions - combining sort and pagination"
+          }
+        },
+        {
+          "name": "Get ACH Items - Small Batches for Processing (FIFO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?status=PENDING&sort_by=created_at&sort_order=asc&limit=10&offset=0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "created_at"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Processing queue pattern - Get next 10 PENDING items (oldest first)"
+          }
+        },
+        {
+          "name": "Get ACH Items - Large Page (100 items, default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?limit=100",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "Default page size (100) - balances performance and usability"
+          }
+        },
+        {
+          "name": "Get All ACH Items - Filter by Side",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items?side=ODFI",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items"],
+              "query": [
+                {
+                  "key": "side",
+                  "value": "ODFI",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single ACH Item (ODFI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items/ODFI/{{odfi_entry_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items", "ODFI", "{{odfi_entry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Single ACH Item (RDFI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items/RDFI/{{rdfi_entry_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items", "RDFI", "{{rdfi_entry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Return RDFI Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"R01\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/ach-items/RDFI/{{rdfi_entry_id}}/return",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "ach-items", "RDFI", "{{rdfi_entry_id}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/healthz",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ODFI Service",
+      "item": [
+        {
+          "name": "Create Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trace_number\": \"1234567890\",\n  \"company_name\": \"ACME Corp\",\n  \"sec_code\": \"PPD\",\n  \"amount_cents\": 50000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/entries",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "entries"]
+            }
+          }
+        },
+        {
+          "name": "List Entries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/entries",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "entries"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "trace_number",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Entry by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/entries/{{odfi_entry_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "entries", "{{odfi_entry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Entry Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SENT\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/entries/{{odfi_entry_id}}/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "entries", "{{odfi_entry_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/healthz",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RDFI Service",
+      "item": [
+        {
+          "name": "Create Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trace_number\": \"0987654321\",\n  \"receiver_name\": \"Jane Smith\",\n  \"amount_cents\": 25000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/v1/entries",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "v1", "entries"]
+            }
+          }
+        },
+        {
+          "name": "List Entries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/v1/entries",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "v1", "entries"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "RECEIVED",
+                  "disabled": true
+                },
+                {
+                  "key": "trace_number",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Entry by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/v1/entries/{{rdfi_entry_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "v1", "entries", "{{rdfi_entry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Return Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"R01\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/v1/entries/{{rdfi_entry_id}}/return",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "v1", "entries", "{{rdfi_entry_id}}", "return"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/healthz",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ledger Service",
+      "item": [
+        {
+          "name": "Create Posting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ach_side\": \"ODFI\",\n  \"trace_number\": \"1234567890\",\n  \"amount_cents\": 50000,\n  \"direction\": \"DEBIT\",\n  \"description\": \"Payment to vendor\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/api/v1/postings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "v1", "postings"]
+            }
+          }
+        },
+        {
+          "name": "List Postings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/postings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "v1", "postings"],
+              "query": [
+                {
+                  "key": "ach_side",
+                  "value": "ODFI",
+                  "disabled": true
+                },
+                {
+                  "key": "trace_number",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Balances",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/balances",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "v1", "balances"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/healthz",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "EIP Service",
+      "item": [
+        {
+          "name": "Create Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"RDFI\",\n  \"trace_number\": \"0987654321\",\n  \"type\": \"CUSTOMER_DISPUTE\",\n  \"notes\": \"Customer called to dispute charge\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8084/api/v1/cases",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "cases"]
+            }
+          }
+        },
+        {
+          "name": "List Cases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/cases",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "cases"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN",
+                  "disabled": true
+                },
+                {
+                  "key": "side",
+                  "value": "RDFI",
+                  "disabled": true
+                },
+                {
+                  "key": "trace_number",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Case by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/cases/{{case_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "cases", "{{case_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Case Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8084/api/v1/cases/{{case_id}}/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["api", "v1", "cases", "{{case_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/healthz",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["healthz"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "odfi_entry_id",
+      "value": "paste-uuid-here"
+    },
+    {
+      "key": "rdfi_entry_id",
+      "value": "paste-uuid-here"
+    },
+    {
+      "key": "case_id",
+      "value": "paste-uuid-here"
+    }
+  ]
+}
+

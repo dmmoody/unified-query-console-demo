@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+
+# Install git if needed
+RUN apk add --no-cache git
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Build RDFI service binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/rdfi ./cmd/rdfi
+
+FROM alpine:3.20
+WORKDIR /app
+
+ENV PORT=8080
+
+COPY --from=builder /bin/rdfi /app/rdfi
+
+EXPOSE 8080
+
+CMD ["/app/rdfi"]
+

@@ -1,0 +1,187 @@
+services:
+  # ODFI Database
+  odfi-db:
+    image: postgres:latest
+    container_name: ach-odfi-db
+    environment:
+      POSTGRES_USER: odfi_user
+      POSTGRES_PASSWORD: odfi_pass
+      POSTGRES_DB: odfi_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odfi_user -d odfi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ach-network
+
+  # ODFI Service
+  odfi:
+    build:
+      context: .
+      dockerfile: Dockerfile.odfi
+    container_name: ach-odfi
+    environment:
+      PORT: 8080
+      DB_HOST: odfi-db
+      DB_PORT: 5432
+      DB_USER: odfi_user
+      DB_PASSWORD: odfi_pass
+      DB_NAME: odfi_db
+      DB_SSLMODE: disable
+    depends_on:
+      odfi-db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    networks:
+      - ach-network
+
+  # RDFI Database
+  rdfi-db:
+    image: postgres:latest
+    container_name: ach-rdfi-db
+    environment:
+      POSTGRES_USER: rdfi_user
+      POSTGRES_PASSWORD: rdfi_pass
+      POSTGRES_DB: rdfi_db
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rdfi_user -d rdfi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ach-network
+
+  # RDFI Service
+  rdfi:
+    build:
+      context: .
+      dockerfile: Dockerfile.rdfi
+    container_name: ach-rdfi
+    environment:
+      PORT: 8080
+      DB_HOST: rdfi-db
+      DB_PORT: 5432
+      DB_USER: rdfi_user
+      DB_PASSWORD: rdfi_pass
+      DB_NAME: rdfi_db
+      DB_SSLMODE: disable
+    depends_on:
+      rdfi-db:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    networks:
+      - ach-network
+
+  # Ledger Database
+  ledger-db:
+    image: postgres:latest
+    container_name: ach-ledger-db
+    environment:
+      POSTGRES_USER: ledger_user
+      POSTGRES_PASSWORD: ledger_pass
+      POSTGRES_DB: ledger_db
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger_user -d ledger_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ach-network
+
+  # Ledger Service
+  ledger:
+    build:
+      context: .
+      dockerfile: Dockerfile.ledger
+    container_name: ach-ledger
+    environment:
+      PORT: 8080
+      DB_HOST: ledger-db
+      DB_PORT: 5432
+      DB_USER: ledger_user
+      DB_PASSWORD: ledger_pass
+      DB_NAME: ledger_db
+      DB_SSLMODE: disable
+    depends_on:
+      ledger-db:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    networks:
+      - ach-network
+
+  # EIP Database
+  eip-db:
+    image: postgres:latest
+    container_name: ach-eip-db
+    environment:
+      POSTGRES_USER: eip_user
+      POSTGRES_PASSWORD: eip_pass
+      POSTGRES_DB: eip_db
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eip_user -d eip_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ach-network
+
+  # EIP Service
+  eip:
+    build:
+      context: .
+      dockerfile: Dockerfile.eip
+    container_name: ach-eip
+    environment:
+      PORT: 8080
+      DB_HOST: eip-db
+      DB_PORT: 5432
+      DB_USER: eip_user
+      DB_PASSWORD: eip_pass
+      DB_NAME: eip_db
+      DB_SSLMODE: disable
+    depends_on:
+      eip-db:
+        condition: service_healthy
+    ports:
+      - "8084:8080"
+    networks:
+      - ach-network
+
+  # Console Service (Unified Gateway)
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile.console
+    container_name: ach-console
+    environment:
+      PORT: 8080
+      ODFI_BASE_URL: http://odfi:8080
+      RDFI_BASE_URL: http://rdfi:8080
+      LEDGER_BASE_URL: http://ledger:8080
+      EIP_BASE_URL: http://eip:8080
+    depends_on:
+      - odfi
+      - rdfi
+      - ledger
+      - eip
+    ports:
+      - "8080:8080"
+    networks:
+      - ach-network
+
+networks:
+  ach-network:
+    driver: bridge
+
